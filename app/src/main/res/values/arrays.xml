@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="pref_title">
+        <item>@string/pref_title_degrees</item>
+        <item>@string/pref_title_minutes</item>
+        <item>@string/pref_title_seconds</item>
+    </string-array>
+
+    <string-array name="pref_values">
+        <item>@string/pref_values_degrees</item>
+        <item>@string/pref_values_minutes</item>
+        <item>@string/pref_values_seconds</item>
+    </string-array>
+</resources>
+

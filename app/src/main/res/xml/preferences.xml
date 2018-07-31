@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:title="@string/pref_title_format"
+        android:dialogTitle="@string/pref_dialog_title_format"
+        android:defaultValue="@string/pref_default_format"
+        android:entries="@array/pref_title"
+        android:entryValues="@array/pref_values"
+        android:key="@string/pref_key_format"
+        android:persistent="true"/>
+
+</PreferenceScreen>

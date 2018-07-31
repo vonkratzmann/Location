@@ -1,0 +1,44 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+
+    </style>
+
+    <!-- Impacts action bar text colour-->
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat">
+        <item name="android:background">@color/Black</item>
+    </style>
+
+    <!-- impacts popups such as menus-->
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat"/>
+
+    <!-- Styles for activity-main.xml -->
+    <style name="AppTheme.Button" parent="AppTheme">
+        <item name="android:textAppearance">?android:textAppearanceMedium</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/myTextColor</item>
+    </style>
+
+    <style name="AppTheme.Label" parent="AppTheme">
+        <item name="android:textAppearance">?android:textAppearanceMedium</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/myTextColor</item>
+    </style>
+
+    <style name="AppTheme.Results" parent="AppTheme">
+        <item name="android:textAppearance">?android:textAppearanceSmall</item>
+        <item name="android:textColor">@color/myTextColor</item>
+    </style>
+
+</resources>

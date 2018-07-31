@@ -1,0 +1,41 @@
+<resources>
+    <string name="app_name">Location</string>
+    <string name="action_settings">Settings</string>
+
+    <!-- Text View Strings -->
+    <string name="latitude_title">Latitude</string>
+    <string name="longitude_title">Longitude</string>
+    <string name="get_address">Get Address</string>
+    <string name="reload_location">Reload Location</string>
+    <string name="coordinates">00.000000</string>
+    <string name ="address" translatable="false">2  street, state, country</string>
+
+    <!-- Settings activity strings -->
+    <string name="settings_activity_title">Settings</string>
+
+      <!--Preferences -->
+    <!--  Preference Checkbox Titles -->
+    <string name="pref_title_degrees">DDD.DDDDD</string> <!-- [CHAR LIMIT=30] -->
+    <string name="pref_title_minutes">DDD:MM.MMMMM</string> <!--[CHAR LIMIT=25] -->
+    <string name="pref_title_seconds">DDD:MM:SS.SSSSS</string> <!--[CHAR LIMIT=25] -->
+
+    <!--  Preference Checkbox Values-->
+    <string name="pref_values_degrees">000.00000</string> <!-- [CHAR LIMIT=30] -->
+    <string name="pref_values_minutes">000:00:00</string> <!--[CHAR LIMIT=25] -->
+    <string name="pref_values_seconds">000:00:00.00000</string> <!--[CHAR LIMIT=25] -->
+
+    <string name="pref_title_format">Select Latitude/Longitude Format</string> <!--[CHAR LIMIT=25] -->
+    <string name="pref_dialog_title_format">D-degrees, M-minutes, S-seconds</string>
+    <string name="pref_key_format">units</string> <!--[CHAR LIMIT=25] -->
+    <string name="pref_default_format">000.00000</string> <!--[CHAR LIMIT=25] -->
+
+     <!-- Error messages -->
+    <string name="location_null">No location available</string>
+    <string name="location_fail">Location error</string>
+    <string name="Gps_error">GPS Error</string>
+
+    <!-- Menu -->
+    <string name="quit">Quit?</string> <!--[CHAR LIMIT=25] -->
+
+
+</resources>
