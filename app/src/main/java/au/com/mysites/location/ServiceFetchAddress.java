@@ -17,6 +17,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Use Geocode to fetch address for the location passed in the intent
+ */
 public class ServiceFetchAddress extends IntentService {
     public ServiceFetchAddress() {
         super("FetchAddressIntentService");
@@ -25,6 +28,15 @@ public class ServiceFetchAddress extends IntentService {
     private final static String TAG = ServiceFetchAddress.class.getSimpleName();
     protected ResultReceiver mReceiver;
 
+    /**
+     * Checks for errors
+     * invokes Geocoder
+     * gets address, checks for errors
+     * logs debug information which is normally suppressed
+     * calls method to send results back to main activity
+     *
+      * @param intent  intent used to start service
+     */
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onHandleIntent");
@@ -42,7 +54,7 @@ public class ServiceFetchAddress extends IntentService {
         mReceiver = intent.getParcelableExtra(Constant.RECEIVER);
 
         try {
-            // In this sample, get just a single address.
+            //Just a single address.
             addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
         } catch (IOException ioException) {
             // Catch network or other I/O problems.
@@ -74,15 +86,9 @@ public class ServiceFetchAddress extends IntentService {
             for (int i = 0; i <= address.getMaxAddressLineIndex(); i++) {
                 addressFragments.add(address.getAddressLine(i));
 
-                //show each address string
+                //for debugging only show each address string
                 if (Debug.DEBUG_INTENT) Log.d(TAG, "i=" + Integer.toString(i) + " "
                         + address.getAddressLine(i));
-
-                if (Debug.DEBUG_INTENT) Log.d(TAG, "Country Name: "
-                        + address.getCountryName());
-
-                if (Debug.DEBUG_INTENT) Log.d(TAG, "AdminArea: "
-                        + address.getAdminArea());
             }
 
             deliverResultToReceiver(Constant.SUCCESS_RESULT,
@@ -92,6 +98,12 @@ public class ServiceFetchAddress extends IntentService {
     }
 
 
+    /**
+     * send address back to main activity
+     *
+     * @param resultCode        results code
+     * @param message           address
+     */
     @SuppressLint("RestrictedApi")
     private void deliverResultToReceiver(int resultCode, String message) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "deliverResultToReceiver");
