@@ -1,18 +1,16 @@
 apply plugin: 'com.android.application'
 
 def keystorePropertiesFile = rootProject.file("keystore.properties")
-
 def keystoreProperties = new Properties()
-
 keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     signingConfigs {
         config {
-            keyAlias 'key0'
-            keyPassword '00oyaw00_Location'
-            storeFile file('E:/Documents/Kirk/AndroidStudioProjects/Location/keystore.jks')
-            storePassword '00oyaw00_Location'
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
         }
     }
     compileSdkVersion 28

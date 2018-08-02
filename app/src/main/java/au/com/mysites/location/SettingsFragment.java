@@ -36,7 +36,7 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
 
         /* Attach the listener to the preferences */
         Preference preference = findPreference(getString(R.string.pref_key_format));
-       // preference.setOnPreferenceChangeListener((Preference.OnPreferenceChangeListener) this);
+        // preference.setOnPreferenceChangeListener((Preference.OnPreferenceChangeListener) this);
     }
 
     /**
@@ -62,6 +62,10 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
         }
     }
 
+    /**
+     * @param sharedPreferences preferences
+     * @param key               key for preference that changed
+     */
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onSharedPreferenceChanged()");
@@ -73,9 +77,9 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
             if (!(preference instanceof android.support.v7.preference.CheckBoxPreference)) {
                 String value = sharedPreferences.getString(preference.getKey(), "");
                 setPreferenceSummary(preference, value);
+            }
         }
     }
-}
 
 
     @Override
@@ -95,5 +99,4 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
         getPreferenceScreen().getSharedPreferences()
                 .unregisterOnSharedPreferenceChangeListener(this);
     }
-
 }
