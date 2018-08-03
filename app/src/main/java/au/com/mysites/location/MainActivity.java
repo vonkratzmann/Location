@@ -44,11 +44,11 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private FusedLocationProviderClient mFusedLocationClient;
-    Location mLastLocation;
+    private Location mLastLocation;
     private AddressResultReceiver mResultReceiver;
 
-    Button mButtonLocationUpdate;
-    Button mButtonGetAddress;
+    private Button mButtonLocationUpdate;
+    private Button mButtonGetAddress;
     //endregion
 
     //region Lifecycle

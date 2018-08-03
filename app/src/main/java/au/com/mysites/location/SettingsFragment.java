@@ -33,10 +33,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
             String value = sharedPreferences.getString(p.getKey(), "");
             setPreferenceSummary(p, value);
         }
-
-        /* Attach the listener to the preferences */
-        Preference preference = findPreference(getString(R.string.pref_key_format));
-        // preference.setOnPreferenceChangeListener((Preference.OnPreferenceChangeListener) this);
     }
 
     /**
