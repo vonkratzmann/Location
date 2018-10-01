@@ -12,7 +12,7 @@ import android.util.Log;
 public class SettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
-    public final static String TAG = SettingsFragment.class.getSimpleName();
+    private final static String TAG = SettingsFragment.class.getSimpleName();
 
     @Override
     public void onCreatePreferences(Bundle bundle, String rootKey) {
@@ -33,10 +33,6 @@ public class SettingsFragment extends PreferenceFragmentCompat implements
             String value = sharedPreferences.getString(p.getKey(), "");
             setPreferenceSummary(p, value);
         }
-
-        /* Attach the listener to the preferences */
-        Preference preference = findPreference(getString(R.string.pref_key_format));
-        // preference.setOnPreferenceChangeListener((Preference.OnPreferenceChangeListener) this);
     }
 
     /**

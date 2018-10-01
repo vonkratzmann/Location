@@ -28,6 +28,9 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import static au.com.mysites.location.Constant.PERMISSION_REQUEST_CODE;
 import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
@@ -44,11 +47,13 @@ public class MainActivity extends AppCompatActivity {
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private FusedLocationProviderClient mFusedLocationClient;
-    Location mLastLocation;
+    private Location mLastLocation;
     private AddressResultReceiver mResultReceiver;
 
-    Button mButtonLocationUpdate;
-    Button mButtonGetAddress;
+    // Debugging only
+    private TextView mTextViewDebug;
+    // End Debug
+
     //endregion
 
     //region Lifecycle
@@ -73,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
         mFusedLocationClient = getFusedLocationProviderClient(this);
         mResultReceiver = new AddressResultReceiver(new Handler());
 
-        mButtonLocationUpdate = findViewById(R.id.ButtonLocationUpdate);
+        Button mButtonLocationUpdate = findViewById(R.id.ButtonLocationUpdate);
         mButtonLocationUpdate.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "OnClick()");
@@ -81,7 +86,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
+        Button mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
         mButtonGetAddress.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "OnClick()");
@@ -89,17 +94,19 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Debugging only
+        mTextViewDebug = findViewById(R.id.textViewDebug);
+        // End Debug
+
         //check permissions and if ok get latitude and longitude
         checkPermissions();
     }
-
 
     @Override
     protected void onStart() {
         super.onStart();
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onStart()");
     }
-
 
     @Override
     protected void onResume() {
@@ -110,13 +117,11 @@ public class MainActivity extends AppCompatActivity {
         if (mLastLocation != null) displayLocation(mLastLocation);
     }
 
-
     @Override
     protected void onPause() {
         super.onPause();
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onPause()");
     }
-
 
     /**
      * Method for setting up the menu
@@ -166,7 +171,6 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     /**
      * Get format to display coordinates from Preferences
      * @return format of coordinates
@@ -182,6 +186,7 @@ public class MainActivity extends AppCompatActivity {
         String defaultRate = getString(R.string.pref_default_format);
         format = pref.getString(key, defaultRate);
 
+        //noinspection ConstantConditions
         if (format.equals(getString(R.string.pref_values_degrees))) return Location.FORMAT_DEGREES;
         if (format.equals(getString(R.string.pref_values_minutes))) return Location.FORMAT_MINUTES;
         if (format.equals(getString(R.string.pref_values_seconds))) return Location.FORMAT_SECONDS;
@@ -189,14 +194,13 @@ public class MainActivity extends AppCompatActivity {
         return Location.FORMAT_DEGREES;
     }
 
-
     /**
      * sets up fused location client, which is an API from Google Play Services
      * adds listeners for success and failure
      * if success calls displayLocation() which displays longitude and latitude
      */
     @SuppressLint("MissingPermission")
-    void getAndDisplayMyLocation() {
+    private void getAndDisplayMyLocation() {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "getAndDisplayMyLocation()");
 
         //sets up fused location client, which is API from Google Play Services
@@ -233,13 +237,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-
     /**
      * Displays latitude and longitude for the supplied location
      *
      * @param location  location containing longitude and latitude
      */
-    void displayLocation(Location location) {
+    private void displayLocation(Location location) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "displayLocation()");
 
         int format = getLatLongFormat();
@@ -248,26 +251,20 @@ public class MainActivity extends AppCompatActivity {
 
         textView = findViewById(R.id.longitude);
         textView.setText(Location.convert(location.getLongitude(), format));
+
+        // Debugging only
+        @SuppressLint("SimpleDateFormat")
+        String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+        mTextViewDebug.setText(timeStamp);
+        // End Debug
     }
-
-
-    /**
-     * Called when the Location Update Button is pressed
-     * Gets location to display on UI
-     * @param view  view for pressed button
-     */
-    public void locationUpdate(View view) {
-        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "locationUpdate(");
-        getAndDisplayMyLocation();
-    }
-
 
     /*
      * Called when the Display Address Button is pressed
      * Starts service to convert location to an address
      * and display the address on the UI
      */
-    public void getAddress() {
+    private void getAddress() {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "getAddress()");
 
         if (mLastLocation == null) {
@@ -280,13 +277,12 @@ public class MainActivity extends AppCompatActivity {
         startService(intent);
     }
 
-
     /**
      * Displays address on UI
      *
      * @param address   address to be displayed
      */
-    void displayAddress(String address) {
+    private void displayAddress(String address) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "displayAddressOutput()");
         TextView textViewAddress = findViewById(R.id.textViewAddress);
         textViewAddress.setText(address);
@@ -333,7 +329,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return super.onOptionsItemSelected(item);
     }
-
 
     /**
      * Callback from app's permission request
