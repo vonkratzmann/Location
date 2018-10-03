@@ -42,13 +42,17 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
  * 1. Reload Location - updates the latitude and longitude
  * 2. Get Address - displays the address provider by a geocoder
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
     //region Fields
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private FusedLocationProviderClient mFusedLocationClient;
+
     private Location mLastLocation;
     private AddressResultReceiver mResultReceiver;
+
+    private Button mButtonLocationUpdate;
+    private Button mButtonGetAddress;
 
     // Debugging only
     private TextView mTextViewDebug;
@@ -75,24 +79,13 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        mFusedLocationClient = getFusedLocationProviderClient(this);
         mResultReceiver = new AddressResultReceiver(new Handler());
 
-        Button mButtonLocationUpdate = findViewById(R.id.ButtonLocationUpdate);
-        mButtonLocationUpdate.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "OnClick()");
-                getAndDisplayMyLocation();
-            }
-        });
+        mButtonLocationUpdate = findViewById(R.id.ButtonLocationUpdate);
+        mButtonLocationUpdate.setOnClickListener(this);
 
-        Button mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
-        mButtonGetAddress.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "OnClick()");
-                getAddress();
-            }
-        });
+        mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
+        mButtonGetAddress.setOnClickListener(this);
 
         // Debugging only
         mTextViewDebug = findViewById(R.id.textViewDebug);
@@ -106,6 +99,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onStart() {
         super.onStart();
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onStart()");
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        //mFusedLocationClient.removeLocationUpdates();
     }
 
     @Override
@@ -173,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Get format to display coordinates from Preferences
+     *
      * @return format of coordinates
      */
     private int getLatLongFormat() {
@@ -204,7 +204,8 @@ public class MainActivity extends AppCompatActivity {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "getAndDisplayMyLocation()");
 
         //sets up fused location client, which is API from Google Play Services
-        mFusedLocationClient = getFusedLocationProviderClient(this);
+      mFusedLocationClient = getFusedLocationProviderClient(this);
+        mFusedLocationClient.flushLocations();
         try {
             mFusedLocationClient.getLastLocation()
                     .addOnSuccessListener(this, new OnSuccessListener<Location>() {
@@ -218,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
                             } else {
                                 mLastLocation = null;
                                 Toast.makeText(getApplicationContext()
-                                        ,getString(R.string.location_null), Toast.LENGTH_SHORT)
+                                        , getString(R.string.location_null), Toast.LENGTH_SHORT)
                                         .show();
                             }
                         }
@@ -227,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
                         @Override
                         public void onFailure(@NonNull Exception e) {
                             Toast.makeText(getApplicationContext()
-                                    ,getString(R.string.Gps_error), Toast.LENGTH_SHORT)
+                                    , getString(R.string.Gps_error), Toast.LENGTH_SHORT)
                                     .show();
                         }
                     });
@@ -240,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Displays latitude and longitude for the supplied location
      *
-     * @param location  location containing longitude and latitude
+     * @param location location containing longitude and latitude
      */
     private void displayLocation(Location location) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "displayLocation()");
@@ -280,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
     /**
      * Displays address on UI
      *
-     * @param address   address to be displayed
+     * @param address address to be displayed
      */
     private void displayAddress(String address) {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "displayAddressOutput()");
@@ -356,12 +357,28 @@ public class MainActivity extends AppCompatActivity {
                 }
         }
     }
+
+    @Override
+    public void onClick(View view) {
+        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "OnClick()");
+
+        int id = view.getId();
+        switch (id) {
+            case R.id.ButtonLocationUpdate:
+                getAndDisplayMyLocation();
+                break;
+
+            case R.id.ButtonGetAddress:
+                getAddress();
+                break;
+        }
+    }
 //endregion
 
 //region InnerClasses
 
     /**
-     *Handles results from the Geocoder
+     * Handles results from the Geocoder
      */
     class AddressResultReceiver extends ResultReceiver {
         @SuppressLint("RestrictedApi")
@@ -372,16 +389,15 @@ public class MainActivity extends AppCompatActivity {
         private static final String TAG = "AddressResultReceiver";
 
         /**
-         *
-         * @param resultCode    code returned
-         * @param resultData    results data
+         * @param resultCode code returned
+         * @param resultData results data
          */
         @Override
         protected void onReceiveResult(int resultCode, Bundle resultData) {
             if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onReceiveResult()");
             if (resultData == null) {
                 Toast.makeText(getApplicationContext(), getString(R.string.address_fail)
-                        ,Toast.LENGTH_SHORT).show();
+                        , Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -390,14 +406,14 @@ public class MainActivity extends AppCompatActivity {
             String mAddressOutput = resultData.getString(Constant.RESULT_DATA_KEY);
             if (mAddressOutput == null) {
                 Toast.makeText(getApplicationContext(), getString(R.string.address_fail)
-                        ,Toast.LENGTH_SHORT).show();
+                        , Toast.LENGTH_SHORT).show();
                 mAddressOutput = "";
             }
             if (resultCode == Constant.SUCCESS_RESULT) {
                 displayAddress(mAddressOutput);
             } else {
                 Toast.makeText(getApplicationContext(), getString(R.string.address_fail)
-                        ,Toast.LENGTH_SHORT).show();
+                        , Toast.LENGTH_SHORT).show();
             }
         }
     }
