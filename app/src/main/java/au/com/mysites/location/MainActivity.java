@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
@@ -24,15 +25,18 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.location.LocationCallback;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationResult;
+import com.google.android.gms.location.LocationServices;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import static au.com.mysites.location.Constant.PERMISSION_REQUEST_CODE;
-import static com.google.android.gms.location.LocationServices.getFusedLocationProviderClient;
 
 /**
  * Displays latitude and longitude on startup with coordinates displayed
@@ -42,25 +46,27 @@ import static com.google.android.gms.location.LocationServices.getFusedLocationP
  * 1. Reload Location - updates the latitude and longitude
  * 2. Get Address - displays the address provider by a geocoder
  */
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements
+        View.OnClickListener,
+        GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener {
     //region Fields
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private FusedLocationProviderClient mFusedLocationClient;
+    private LocationCallback mLocationCallback;
 
-    private Location mLastLocation;
+    private Location mLocation;
+    private LocationRequest mLocationRequest;
     private AddressResultReceiver mResultReceiver;
-
-    private Button mButtonLocationUpdate;
-    private Button mButtonGetAddress;
 
     // Debugging only
     private TextView mTextViewDebug;
     // End Debug
 
-    //endregion
+//endregion
 
-    //region Lifecycle
+//region Lifecycle
 
     /**
      * loads layout, toolbar
@@ -81,19 +87,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         mResultReceiver = new AddressResultReceiver(new Handler());
 
-        mButtonLocationUpdate = findViewById(R.id.ButtonLocationUpdate);
+        Button mButtonLocationUpdate = findViewById(R.id.ButtonLocationUpdate);
         mButtonLocationUpdate.setOnClickListener(this);
 
-        mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
+        Button mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
         mButtonGetAddress.setOnClickListener(this);
 
         // Debugging only
         mTextViewDebug = findViewById(R.id.textViewDebug);
         // End Debug
-
-        //check permissions and if ok get latitude and longitude
-        checkPermissions();
-    }
+      }
 
     @Override
     protected void onStart() {
@@ -104,22 +107,30 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onStop() {
         super.onStop();
-        //mFusedLocationClient.removeLocationUpdates();
+        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onStop()");
     }
 
+    /**
+     * Display location on each resume in case format changed.
+     */
     @Override
     protected void onResume() {
         super.onResume();
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onResume()");
 
-        //display location in case format changed
-        if (mLastLocation != null) displayLocation(mLastLocation);
+        setUpFusedLocationClient();
+
+        //check permissions and if ok start updates and get latitude and longitude
+        checkPermissionAndStartUpdates();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onPause()");
+        if (mFusedLocationClient != null) {
+            mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+        }
     }
 
     /**
@@ -139,17 +150,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         /* Return true so that the visualizer_menu is displayed in the Toolbar */
         return true;
     }
-    //endregion
+//endregion
 
-    //region Methods
+//region Methods
+
+    /**
+     * Set up fused location client, which is API from Google Play Services
+     */
+    private void setUpFusedLocationClient() {
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(getApplicationContext());
+    }
 
     /**
      * Checks have permission to access location resources.
-     * If we do get location and display it
-     * after requestPermission()system calls onRequestPermissionsResult() with the results
+     * If we do start updates to get location and display results.
+     * If we do not, calls requestPermissions with the results in
+     * onRequestPermissionsResult().
      */
-    private void checkPermissions() {
-        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "checkPermissions()");
+    private void checkPermissionAndStartUpdates() {
+        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "checkPermissionAndStartUpdates()");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -163,11 +182,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 }, PERMISSION_REQUEST_CODE);
             }
             //have the permissions
-            getAndDisplayMyLocation();
+            startLocationUpdates();
         } else {
             //not required to ask user for specific permissions as below Android 6 (Marshmallow)
-            getAndDisplayMyLocation();
+            startLocationUpdates();
         }
+    }
+
+    /**
+     * Only want one location, so set the rate to a small value
+     * and after the location is received disable updates
+     * timeout after 10 seconds
+     */
+    private void createLocationRequest() {
+        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "createLocationRequest()");
+
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setExpirationDuration(10000L);
+        //   mLocationRequest.setNumUpdates(1);
+        mLocationRequest.setInterval(500L);
+        mLocationRequest.setFastestInterval(500L);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
     }
 
     /**
@@ -195,47 +230,53 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     /**
-     * sets up fused location client, which is an API from Google Play Services
-     * adds listeners for success and failure
-     * if success calls displayLocation() which displays longitude and latitude
+     * Request location updates
+     * if success, get results via callback calls displayLocation().
      */
     @SuppressLint("MissingPermission")
-    private void getAndDisplayMyLocation() {
-        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "getAndDisplayMyLocation()");
+    private void startLocationUpdates() {
+        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "startLocationUpdates()");
 
-        //sets up fused location client, which is API from Google Play Services
-      mFusedLocationClient = getFusedLocationProviderClient(this);
-        mFusedLocationClient.flushLocations();
+        createLocationRequest();
+        setUpFusedLocationClient();
+        setUpLocationCallback();
         try {
-            mFusedLocationClient.getLastLocation()
-                    .addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                        @Override
-                        public void onSuccess(Location location) {
+            mFusedLocationClient.requestLocationUpdates(
+                    mLocationRequest,
+                    mLocationCallback,
+                    null);
 
-                            // Got last known location. In some rare situations this can be null.
-                            if (location != null) {
-                                mLastLocation = location;
-                                displayLocation(location);
-                            } else {
-                                mLastLocation = null;
-                                Toast.makeText(getApplicationContext()
-                                        , getString(R.string.location_null), Toast.LENGTH_SHORT)
-                                        .show();
-                            }
-                        }
-                    })
-                    .addOnFailureListener(new OnFailureListener() {
-                        @Override
-                        public void onFailure(@NonNull Exception e) {
-                            Toast.makeText(getApplicationContext()
-                                    , getString(R.string.Gps_error), Toast.LENGTH_SHORT)
-                                    .show();
-                        }
-                    });
         } catch (SecurityException e) {
-            Toast.makeText(MainActivity.this, getString(R.string.SecurityException),
-                    Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Fused Location Client: " + e);
         }
+    }
+
+    /**
+     * Set up location call back.
+     */
+    private void setUpLocationCallback() {
+        if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "setUpLocationCallback()");
+
+        mLocationCallback = new LocationCallback() {
+            @Override
+            public void onLocationResult(LocationResult locationResult) {
+                if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "onLocationResult()");
+
+                if (locationResult != null) {
+
+                    for (Location location : locationResult.getLocations()) {
+                        mLocation = location;
+                        Log.d(TAG, "" + "Location Result() " +
+                                "Location: " + location.getLatitude() + " " + location.getLongitude());
+                        displayLocation(location);
+                    }
+                }
+                // As only want one result turn off updates
+                if (mFusedLocationClient != null) {
+                    mFusedLocationClient.removeLocationUpdates(mLocationCallback);
+                }
+            }
+        };
     }
 
     /**
@@ -253,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         textView = findViewById(R.id.longitude);
         textView.setText(Location.convert(location.getLongitude(), format));
 
-        // Debugging only
+// Debugging only
         @SuppressLint("SimpleDateFormat")
         String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
         mTextViewDebug.setText(timeStamp);
@@ -268,13 +309,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void getAddress() {
         if (Debug.DEBUG_METHOD_ENTRY) Log.d(TAG, "getAddress()");
 
-        if (mLastLocation == null) {
+        if (mLocation == null) {
             Toast.makeText(this, getString(R.string.location_null), Toast.LENGTH_SHORT).show();
             return;
         }
         Intent intent = new Intent(this, ServiceFetchAddress.class);
         intent.putExtra(Constant.RECEIVER, mResultReceiver);
-        intent.putExtra(Constant.LOCATION_DATA_EXTRA, mLastLocation);
+        intent.putExtra(Constant.LOCATION_DATA_EXTRA, mLocation);
         startService(intent);
     }
 
@@ -348,7 +389,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     // permission was granted
-                    getAndDisplayMyLocation();
+                    startLocationUpdates();
                 } else {
                     // permission denied exit app, tell user
                     Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show();
@@ -365,13 +406,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         int id = view.getId();
         switch (id) {
             case R.id.ButtonLocationUpdate:
-                getAndDisplayMyLocation();
+                startLocationUpdates();
                 break;
 
             case R.id.ButtonGetAddress:
                 getAddress();
                 break;
         }
+    }
+
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
     }
 //endregion
 
