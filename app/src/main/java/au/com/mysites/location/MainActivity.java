@@ -3,6 +3,7 @@ package au.com.mysites.location;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
@@ -11,7 +12,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.os.ResultReceiver;
 import android.support.v7.app.AppCompatActivity;
@@ -25,13 +25,18 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResponse;
+import com.google.android.gms.location.SettingsClient;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -47,9 +52,7 @@ import static au.com.mysites.location.Constant.PERMISSION_REQUEST_CODE;
  * 2. Get Address - displays the address provider by a geocoder
  */
 public class MainActivity extends AppCompatActivity implements
-        View.OnClickListener,
-        GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener {
+        View.OnClickListener {
     //region Fields
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -60,10 +63,8 @@ public class MainActivity extends AppCompatActivity implements
     private LocationRequest mLocationRequest;
     private AddressResultReceiver mResultReceiver;
 
-    // Debugging only
+    // Used to display date and time on display
     private TextView mTextViewDebug;
-    // End Debug
-
 //endregion
 
 //region Lifecycle
@@ -93,10 +94,40 @@ public class MainActivity extends AppCompatActivity implements
         Button mButtonGetAddress = findViewById(R.id.ButtonGetAddress);
         mButtonGetAddress.setOnClickListener(this);
 
-        // Debugging only
-        mTextViewDebug = findViewById(R.id.textViewDebug);
-        // End Debug
-      }
+        if (Debug.DEBUG_DATE_TIME) {
+            mTextViewDebug = findViewById(R.id.textViewDateTime);
+        }
+        // Now check if the device the current location settings are set up appropriately
+        LocationSettingsRequest.Builder builder = new LocationSettingsRequest.Builder();
+
+        SettingsClient client = LocationServices.getSettingsClient(this);
+        Task<LocationSettingsResponse> task = client.checkLocationSettings(builder.build());
+
+        task.addOnSuccessListener(this, new OnSuccessListener<LocationSettingsResponse>() {
+            @Override
+            public void onSuccess(LocationSettingsResponse locationSettingsResponse) {
+                // All location settings are satisfied.
+            }
+        });
+
+        task.addOnFailureListener(this, new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                if (e instanceof ResolvableApiException) {
+                    // Location settings are not satisfied, show the user a dialog.
+                    try {
+                        // Show the dialog by calling startResolutionForResult(),
+                        // and check the result in onActivityResult().
+                        ResolvableApiException resolvable = (ResolvableApiException) e;
+                        resolvable.startResolutionForResult(MainActivity.this,
+                                Constant.REQUEST_CHECK_SETTINGS);
+                    } catch (IntentSender.SendIntentException sendEx) {
+                        // Ignore the error.
+                    }
+                }
+            }
+        });
+    }
 
     @Override
     protected void onStart() {
@@ -222,9 +253,12 @@ public class MainActivity extends AppCompatActivity implements
         format = pref.getString(key, defaultRate);
 
         //noinspection ConstantConditions
-        if (format.equals(getString(R.string.pref_values_degrees))) return Location.FORMAT_DEGREES;
-        if (format.equals(getString(R.string.pref_values_minutes))) return Location.FORMAT_MINUTES;
-        if (format.equals(getString(R.string.pref_values_seconds))) return Location.FORMAT_SECONDS;
+        if (format.equals(getString(R.string.pref_values_degrees)))
+            return Location.FORMAT_DEGREES;
+        if (format.equals(getString(R.string.pref_values_minutes)))
+            return Location.FORMAT_MINUTES;
+        if (format.equals(getString(R.string.pref_values_seconds)))
+            return Location.FORMAT_SECONDS;
         //return default
         return Location.FORMAT_DEGREES;
     }
@@ -266,8 +300,9 @@ public class MainActivity extends AppCompatActivity implements
 
                     for (Location location : locationResult.getLocations()) {
                         mLocation = location;
-                        Log.d(TAG, "" + "Location Result() " +
-                                "Location: " + location.getLatitude() + " " + location.getLongitude());
+                        if (Debug.DEBUG_LOCATION) Log.d(TAG, "" + "Location Result() " +
+                                "Location: " + location.getLatitude() + " " +
+                                location.getLongitude());
                         displayLocation(location);
                     }
                 }
@@ -293,12 +328,11 @@ public class MainActivity extends AppCompatActivity implements
 
         textView = findViewById(R.id.longitude);
         textView.setText(Location.convert(location.getLongitude(), format));
-
-// Debugging only
-        @SuppressLint("SimpleDateFormat")
-        String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
-        mTextViewDebug.setText(timeStamp);
-        // End Debug
+        if (Debug.DEBUG_DATE_TIME) {
+            @SuppressLint("SimpleDateFormat")
+            String timeStamp = new SimpleDateFormat("yyyy.MM.dd.HH.mm.ss").format(new Date());
+            mTextViewDebug.setText(timeStamp);
+        }
     }
 
     /*
@@ -387,12 +421,14 @@ public class MainActivity extends AppCompatActivity implements
         switch (requestCode) {
             case PERMISSION_REQUEST_CODE:
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] ==
+                        PackageManager.PERMISSION_GRANTED) {
                     // permission was granted
                     startLocationUpdates();
                 } else {
                     // permission denied exit app, tell user
-                    Toast.makeText(this, getString(R.string.permission_denied), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this,
+                            getString(R.string.permission_denied), Toast.LENGTH_LONG).show();
                     shutDown();
                     finish();
                 }
@@ -415,20 +451,6 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-
-    }
 //endregion
 
 //region InnerClasses
