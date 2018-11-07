@@ -7,7 +7,7 @@
     <string name="longitude_title">Longitude</string>
     <string name="get_address">Get Address</string>
     <string name="reload_location">Reload Location</string>
-    <string name="coordinates">00.000000</string>
+    <string name="coordinates">00.00000</string>
     <string name ="address" translatable="false">2  street, state, country</string>
 
     <!-- Settings activity strings -->
@@ -21,7 +21,7 @@
 
     <!--  Preference Checkbox Values-->
     <string name="pref_values_degrees">000.00000</string> <!-- [CHAR LIMIT=30] -->
-    <string name="pref_values_minutes">000:00:00</string> <!--[CHAR LIMIT=25] -->
+    <string name="pref_values_minutes">000:00.00000</string> <!--[CHAR LIMIT=25] -->
     <string name="pref_values_seconds">000:00:00.00000</string> <!--[CHAR LIMIT=25] -->
 
     <string name="pref_title_format">Select Latitude/Longitude Format</string> <!--[CHAR LIMIT=25] -->
