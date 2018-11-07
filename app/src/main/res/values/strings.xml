@@ -31,11 +31,8 @@
 
      <!-- Error messages -->
     <string name="location_null">No location available</string>
-    <string name="location_fail">Location error</string>
     <string name="address_fail">Address error</string>
-    <string name="Gps_error">GPS Error</string>
     <string name="permission_denied">Permission denied, exiting Location App</string>
-    <string name="SecurityException">Security Error</string>
 
     <!-- Menu -->
     <string name="quit">Quit?</string> <!--[CHAR LIMIT=25] -->

@@ -12,7 +12,7 @@ import android.util.Log;
 public class SettingsFragment extends PreferenceFragmentCompat implements
         SharedPreferences.OnSharedPreferenceChangeListener {
 
-    public final static String TAG = SettingsFragment.class.getSimpleName();
+    private final static String TAG = SettingsFragment.class.getSimpleName();
 
     @Override
     public void onCreatePreferences(Bundle bundle, String rootKey) {

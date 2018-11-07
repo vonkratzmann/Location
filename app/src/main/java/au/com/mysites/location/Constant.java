@@ -9,7 +9,9 @@ final class Constant {
     static final String RESULT_DATA_KEY = PACKAGE_NAME + ".RESULT_DATA_KEY";
     static final String LOCATION_DATA_EXTRA = PACKAGE_NAME + ".LOCATION_DATA_EXTRA";
 
-    static final int PERMISSION_REQUEST_CODE = 10;
+    // Used to check user's location settings allow location services to create a LocationRequest
+    static final int REQUEST_CHECK_SETTINGS = 10;
+    static final int PERMISSION_REQUEST_CODE = 20;
 
 }
 

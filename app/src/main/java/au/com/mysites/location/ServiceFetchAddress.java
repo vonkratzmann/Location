@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Use Geocode to fetch address for the location passed in the intent
@@ -26,7 +27,7 @@ public class ServiceFetchAddress extends IntentService {
     }
 
     private final static String TAG = ServiceFetchAddress.class.getSimpleName();
-    protected ResultReceiver mReceiver;
+    private ResultReceiver mReceiver;
 
     /**
      * Checks for errors
@@ -79,7 +80,7 @@ public class ServiceFetchAddress extends IntentService {
         } else {
             if (Debug.DEBUG_INTENT) Log.d(TAG, "Address_found");
             Address address = addresses.get(0);
-            ArrayList<String> addressFragments = new ArrayList<String>();
+            ArrayList<String> addressFragments = new ArrayList<>();
 
             // Fetch the address lines using getAddressLine,
             // join them, and send them to the thread.
@@ -92,7 +93,7 @@ public class ServiceFetchAddress extends IntentService {
             }
 
             deliverResultToReceiver(Constant.SUCCESS_RESULT,
-                    TextUtils.join(System.getProperty("line.separator"),
+                    TextUtils.join(Objects.requireNonNull(System.getProperty("line.separator")),
                             addressFragments));
         }
     }
